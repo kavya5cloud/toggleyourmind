@@ -8,12 +8,10 @@
     <!-- Load Custom Font: DM Mono (cute code) and Inter (clean, readable body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- FONT LINK UPDATED to Inter -->
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         /* Vibrant Sticker Book Theme - Lilac and Pink */
         body {
-            /* FONT CHANGED to Inter (Clean Sans-Serif) */
             font-family: 'Inter', sans-serif; 
             background-color: #f8f0ff; /* Very light lilac/off-white background */
             color: #6b46c1; /* Deep Violet Text */
@@ -28,7 +26,6 @@
 
         /* Ensure main text areas use the clean font */
         #card-term, #card-definition, textarea {
-             /* FONT CHANGED to Inter */
              font-family: 'Inter', sans-serif;
              font-weight: 600; /* Use a medium-bold weight for better flashcard readability */
         }
@@ -119,17 +116,14 @@
     <div id="app" class="max-w-3xl mx-auto">
         <!-- Header -->
         <header class="text-center mb-8">
-            <!-- Title changed to MIND FORGE, color changed to dark indigo/violet -->
             <h1 class="text-6xl text-indigo-700 mb-2 tracking-wide">
                 🧠 TOGGLE YOUR MIND 🧠 
             </h1>
-            <!-- Subtitle changed to ADAPTIVE STUDY TOOLKIT. -->
             <p class="text-violet-500 text-lg font-medium">ADAPTIVE STUDY TOOLKIT.</p>
         </header>
 
         <!-- 1. Input Section -->
         <div id="input-section" class="bg-white fun-container p-6 sm:p-8">
-            <!-- Header now in DM Mono -->
             <h2 class="text-2xl text-violet-700 mb-4">1. DROP YOUR NOTES HERE!</h2>
             
             <textarea id="sourceText" class="w-full p-4 resize-none text-gray-700 focus:ring-pink-400 focus:border-pink-400" rows="10" placeholder="Paste a block of text, a list of facts, or a topic you need to learn."></textarea>
@@ -146,7 +140,6 @@
 
         <!-- 2. Flashcard/Quiz Section (Hidden by default) -->
         <div id="flashcard-section" class="hidden mt-10">
-            <!-- Header now in DM Mono -->
             <h2 class="text-2xl text-violet-700 mb-6 text-center">2. TIME TO REVIEW 🚀</h2>
 
             <!-- Card Display Area (The Card Itself) -->
@@ -161,7 +154,7 @@
                 <!-- Definition Container (The Reveal Element) -->
                 <div id="card-definition-container" class="reveal-content">
                     <div class="p-4 border-t border-purple-200">
-                         <!-- Answer label now in DM Mono -->
+                        <!-- Answer label now in DM Mono -->
                         <p class="text-xs font-semibold uppercase text-pink-500 mb-2">Answer</p>
                         <span id="card-definition" class="text-xl text-gray-700 block"></span>
                     </div>
@@ -245,114 +238,11 @@
     <script type="module">
         
         // --- API Constants ---
+        // NOTE: The API key is left as an empty string. The Canvas environment will populate it at runtime.
         const apiKey = "AIzaSyCBjZTBo2A0rB8r3O3tp4JB2QY25RthU8U"; 
         const TEXT_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=" + apiKey;
         // TTS API URL for audio generation
         const TTS_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=" + apiKey;
-
-/** Displays an information or error message to the user. */
-function showMessage(message) {
-    // This utility controls the message box visibility and styling
-    const D = { messageBox: document.getElementById('messageBox') };
-
-    D.messageBox.textContent = message;
-    D.messageBox.classList.remove('text-red-600', 'text-violet-700');
-    if (message.includes("Oops!") || message.includes("error") || message.includes("failed") || message.includes("rejected")) {
-         D.messageBox.classList.add('text-red-600');
-    } else {
-         D.messageBox.classList.add('text-violet-700');
-    }
-    D.messageBox.classList.toggle('hidden', message.length === 0);
-}
-
-
-// --- Generic Fetch with Retry (Crucial for robust API calls) ---
-
-/** Generic function for fetching data with exponential backoff and retry. */
-async function fetchWithRetry(url, payload) {
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    while (attempts < maxAttempts) {
-        attempts++;
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                return await response.json();
-            }
-            // Throw a specific error that includes the status for logging
-            throw new Error(`HTTP error! status: ${response.status}`);
-        } catch (error) {
-            // Log the attempt failure
-            console.error(`Attempt ${attempts} failed:`, error);
-            if (attempts < maxAttempts) {
-                const delay = Math.pow(2, attempts) * 1000;
-                // Wait before retrying (1s, 2s, 4s delay)
-                await new Promise(resolve => setTimeout(resolve, delay));
-            } else {
-                // Return null if all attempts fail
-                return null; 
-            }
-        }
-    }
-}
-
-
-// --- Updated Flashcard Generation Logic ---
-
-/** Generates flashcards from user input using the Gemini API (Feature 1). */
-window.generateFlashcards = async function() {
-    // State and DOM references should be defined outside this function for a real app.
-    // Assuming D and other constants (TEXT_API_URL, flashcardSystemPrompt, etc.) are available.
-    showMessage(""); 
-    
-    // ... setup and input validation omitted for brevity ...
-    // const userQuery = D.sourceTextarea.value.trim();
-    // if (!userQuery) { showMessage(...); return; }
-    
-    // setLoading(true, "Extracting fun facts...");
-
-    const payload = {
-        // contents and other config...
-    };
-
-    // Use the robust retry function
-    let responseData = await fetchWithRetry(TEXT_API_URL, payload);
-
-    // setLoading(false);
-
-    if (!responseData) {
-        // Show this if all 3 retries failed (likely a network or setup issue)
-        showMessage("Oops! Card generation failed after 3 retries. Check the console for HTTP 400 errors.");
-        return;
-    }
-
-    // NEW: Check for a top-level API error object (common with HTTP 400)
-    if (responseData.error) {
-        console.error("Gemini API Error Response:", responseData.error);
-        showMessage(`Oops! API rejected the request: ${responseData.error.message || 'Unknown reason'}. Try clearing your input and submitting a more detailed prompt.`);
-        return;
-    }
-
-    try {
-        // ... rest of the successful response parsing ...
-        
-        // Example parsing logic:
-        // const jsonText = responseData.candidates[0].content.parts[0].text;
-        // const generatedCards = JSON.parse(jsonText);
-        
-        // ... update UI with flashcards ...
-
-    } catch (e) {
-        console.error("Error parsing AI response:", e);
-        showMessage("Error processing AI response. Check the console for parsing details.");
-    }
-}
 
         // --- State ---
         let flashcards = [];
@@ -383,7 +273,6 @@ window.generateFlashcards = async function() {
         };
         
         // --- Gemini API Schema & Prompt ---
-        // 1. System prompt for initial card generation (Structured JSON output)
         const flashcardSystemPrompt = "You are an expert educational assistant specializing in generating concise study materials. Analyze the user's provided text/topic. Create a list of 5 to 10 key concepts and their definitions as flashcards. Respond only with a JSON array that strictly follows the provided schema. Do not include any introductory text, markdown formatting outside the JSON, or conversational responses.";
         
         const flashcardSchema = {
@@ -463,11 +352,178 @@ window.generateFlashcards = async function() {
                 buttons.forEach(btn => btn && (btn.disabled = true));
             } else {
                 D.loadingIndicator.classList.add('hidden');
+                // Re-enable all buttons once loading is complete
                 buttons.forEach(btn => btn && (btn.disabled = false));
             }
         }
 
+        /** Displays an information or error message to the user. */
+        function showMessage(message) {
+            D.messageBox.textContent = message;
+            D.messageBox.classList.remove('text-red-600', 'text-violet-700');
+            if (message.includes("Oops!") || message.includes("error") || message.includes("failed") || message.includes("rejected")) {
+                 D.messageBox.classList.add('text-red-600');
+            } else {
+                 D.messageBox.classList.add('text-violet-700');
+            }
+            D.messageBox.classList.toggle('hidden', message.length === 0);
+        }
 
+        /** Generic function for fetching data with exponential backoff and retry. */
+        async function fetchWithRetry(url, payload) {
+            let attempts = 0;
+            const maxAttempts = 3;
+
+            while (attempts < maxAttempts) {
+                attempts++;
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                    // Throw a specific error that includes the status for logging
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                } catch (error) {
+                    // Log the attempt failure
+                    console.error(`Attempt ${attempts} failed:`, error);
+                    if (attempts < maxAttempts) {
+                        const delay = Math.pow(2, attempts) * 1000;
+                        // Wait before retrying (1s, 2s, 4s delay)
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        // Return null if all attempts fail
+                        return null; 
+                    }
+                }
+            }
+        }
+        
+        /** Updates the flashcard display with the current card's content. */
+        function renderCurrentCard() {
+            if (flashcards.length === 0) return;
+
+            const card = flashcards[currentCardIndex];
+            D.cardTerm.textContent = card.term;
+            D.cardDefinition.innerHTML = card.definition; // Use innerHTML for definition (allows bolding from AI)
+            D.cardCount.textContent = `Card ${currentCardIndex + 1} of ${flashcards.length}`;
+
+            // Always hide definition when a new card is displayed
+            isDefinitionVisible = false;
+            D.cardDefinitionContainer.classList.remove('is-visible');
+            D.toggleButton.textContent = "REVEAL ANSWER";
+            
+            // Clear the LLM suggestion area
+            D.suggestionArea.classList.add('hidden');
+            D.sourceDisplay.classList.add('hidden');
+        }
+
+        /** Toggles the visibility of the definition (Feature 6). */
+        window.toggleDefinition = function() {
+            isDefinitionVisible = !isDefinitionVisible;
+            D.cardDefinitionContainer.classList.toggle('is-visible', isDefinitionVisible);
+            D.toggleButton.textContent = isDefinitionVisible ? "HIDE ANSWER" : "REVEAL ANSWER";
+        };
+
+        /** Changes the current card index (Feature 8). */
+        window.changeCard = function(delta) {
+            if (flashcards.length === 0) return;
+            
+            let newIndex = currentCardIndex + delta;
+            
+            // Loop back around
+            if (newIndex >= flashcards.length) {
+                newIndex = 0;
+            } else if (newIndex < 0) {
+                newIndex = flashcards.length - 1;
+            }
+
+            currentCardIndex = newIndex;
+            renderCurrentCard();
+        };
+
+        /** Resets the application state to the input screen (Feature 9). */
+        window.resetApp = function() {
+            flashcards = [];
+            currentCardIndex = 0;
+            isDefinitionVisible = false;
+            D.sourceTextarea.value = '';
+            D.inputSection.classList.remove('hidden');
+            D.flashcardSection.classList.add('hidden');
+            D.suggestionArea.classList.add('hidden');
+            D.sourceDisplay.classList.add('hidden');
+            showMessage("");
+        };
+        
+        /** Generates and plays Text-to-Speech audio for the current card's content (Feature 10). */
+        window.speakCurrentCard = async function() {
+            if (flashcards.length === 0) {
+                showMessage("No card loaded to speak.");
+                return;
+            }
+            const card = flashcards[currentCardIndex];
+            
+            // Combine term and definition for TTS
+            const textToSpeak = `Term: ${card.term}. Definition: ${card.definition}`;
+            
+            setLoading(true, "Generating speech audio...");
+
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: textToSpeak }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Puck" } // Upbeat voice
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+                
+                const responseData = await fetchWithRetry(TTS_API_URL, payload);
+                
+                if (!responseData) {
+                    showMessage("Oops! TTS generation failed after retries.");
+                    return;
+                }
+
+                const part = responseData.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
+                    // Extract sample rate from the mimeType (e.g., audio/L16;rate=24000)
+                    const rateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+                    
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+
+                    // Convert raw PCM to a playable WAV Blob
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    
+                    // Play the audio
+                    const audio = new Audio(audioUrl);
+                    audio.play().catch(e => console.error("Audio playback failed (usually permission or browser restriction):", e));
+
+                    showMessage("🔊 Playing card audio...");
+                } else {
+                    showMessage("Oops! Audio data was not returned or format is unsupported.");
+                }
+            } catch (error) {
+                console.error("TTS error:", error);
+                showMessage("An unexpected error occurred during Text-to-Speech.");
+            } finally {
+                setLoading(false);
+            }
+        }
 
         
         /** Generates flashcards from user input using the Gemini API (Feature 1). */
@@ -499,6 +555,13 @@ window.generateFlashcards = async function() {
 
             if (!responseData) {
                 showMessage("Oops! Card generation failed. Try simplifying your input.");
+                return;
+            }
+            
+            // Check for a top-level API error object (common with HTTP 400)
+            if (responseData.error) {
+                console.error("Gemini API Error Response:", responseData.error);
+                showMessage(`Oops! API rejected the request: ${responseData.error.message || 'Unknown reason'}. Try clearing your input and submitting a more detailed prompt.`);
                 return;
             }
 
@@ -534,11 +597,9 @@ window.generateFlashcards = async function() {
             // System instruction for the helper features
             const helperSystemPrompt = "You are an expert educational assistant. Respond concisely and clearly, formatting the text appropriately for an online study tool. Provide a clear, short paragraph answer.";
 
-
             // Hide previous suggestions and sources
             D.suggestionArea.classList.add('hidden');
             D.sourceDisplay.classList.add('hidden'); 
-
 
             if (featureType === 'explain') {
                 // Feature 2: Simplification
@@ -627,158 +688,14 @@ window.generateFlashcards = async function() {
                 }
             }
             
-            // Show or hide the source display area
-            D.sourceDisplay.classList.toggle('hidden', !hasSources);
-
+            // Show suggestion box and sources if applicable
             D.suggestionArea.classList.remove('hidden');
-        }
-        
-        /** Generates and plays audio for the current card's term and definition (Feature 6). */
-        window.speakCurrentCard = async function() {
-            if (flashcards.length === 0) return;
-            const card = flashcards[currentCardIndex];
-
-            // Prepare the text for clear reading. Remove HTML bold tags.
-            const cleanDefinition = card.definition.replace(/<\/?b>/g, '');
-            const speechText = `The term is: ${card.term}. The definition is: ${cleanDefinition}`;
-
-            D.suggestionArea.classList.add('hidden');
-            D.sourceDisplay.classList.add('hidden'); // Hide sources
-            setLoading(true, "Generating speech...");
-
-            // Payload for the TTS API call
-            const payload = {
-                contents: [{ parts: [{ text: speechText }] }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: {
-                        // Using the 'Kore' voice for a firm, clear delivery
-                        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } }
-                    }
-                },
-                model: "gemini-2.5-flash-preview-tts"
-            };
-
-            const responseData = await fetchWithRetry(TTS_API_URL, payload);
-            setLoading(false);
-            
-            if (!responseData) {
-                 showMessage("Oops! Failed to generate audio.");
-                 return;
-            }
-
-            try {
-                const part = responseData?.candidates?.[0]?.content?.parts?.[0];
-                const audioData = part?.inlineData?.data;
-                const mimeType = part?.inlineData?.mimeType;
-
-                if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
-                    const rateMatch = mimeType.match(/rate=(\d+)/);
-                    if (!rateMatch) throw new Error("Could not find sample rate in mimeType.");
-                    const sampleRate = parseInt(rateMatch[1], 10);
-                    
-                    // 1. Decode base64 to raw PCM buffer
-                    const pcmBuffer = base64ToArrayBuffer(audioData);
-                    
-                    // 2. Convert raw PCM buffer (Int8Array) to Int16Array
-                    const pcm16 = new Int16Array(pcmBuffer.byteLength / 2);
-                    const view = new DataView(pcmBuffer);
-
-                    for (let i = 0; i < pcm16.length; i++) {
-                        // Read signed 16-bit little-endian
-                        pcm16[i] = view.getInt16(i * 2, true); 
-                    }
-
-                    // 3. Convert PCM16 data to WAV Blob
-                    const wavBlob = pcmToWav(pcm16, sampleRate);
-                    
-                    // 4. Play the audio
-                    const audioUrl = URL.createObjectURL(wavBlob);
-                    const audio = new Audio(audioUrl);
-                    D.speakButton.disabled = true; // Disable button while audio plays
-                    audio.onended = () => {
-                        URL.revokeObjectURL(audioUrl); // Clean up
-                        D.speakButton.disabled = false;
-                    }
-                    audio.play().catch(e => {
-                        console.error("Audio playback failed:", e);
-                        showMessage("Audio playback blocked by browser (check permissions).");
-                        D.speakButton.disabled = false;
-                    });
-                } else {
-                    throw new Error("Invalid or missing audio data in API response.");
-                }
-            } catch (e) {
-                console.error("Audio processing error:", e);
-                showMessage("Oops! Audio failed: " + e.message);
-            }
-        }
-
-
-        // --- UI Navigation and State ---
-
-        /** Toggles the visibility of the definition container. */
-        window.toggleDefinition = function() {
-            isDefinitionVisible = !isDefinitionVisible;
-            if (isDefinitionVisible) {
-                D.cardDefinitionContainer.classList.add('is-visible');
-                D.toggleButton.textContent = "HIDE ANSWER";
-                D.toggleButton.classList.remove('primary');
-                D.toggleButton.classList.add('secondary');
+            if (hasSources) {
+                D.sourceDisplay.classList.remove('hidden');
             } else {
-                D.cardDefinitionContainer.classList.remove('is-visible');
-                D.toggleButton.textContent = "REVEAL ANSWER";
-                D.toggleButton.classList.remove('secondary');
-                D.toggleButton.classList.add('primary');
+                D.sourceDisplay.classList.add('hidden');
             }
-        }
-        
-        /** Renders the term and definition for the current flashcard. */
-        function renderCurrentCard() {
-            if (flashcards.length === 0) return;
-
-            const card = flashcards[currentCardIndex];
-            D.cardTerm.textContent = card.term;
-            D.cardDefinition.innerHTML = card.definition;
-            
-            D.cardCount.textContent = `Card ${currentCardIndex + 1} of ${flashcards.length}`;
-            
-            // Hide definition for the new card
-            isDefinitionVisible = true; 
-            toggleDefinition(); // Flips it back to the hidden state
-            
-            D.suggestionArea.classList.add('hidden'); 
-            D.sourceDisplay.classList.add('hidden'); // Hide sources area
-        }
-
-        /** Changes the current card index and renders the new card. */
-        window.changeCard = function(direction) {
-            if (flashcards.length === 0) return;
-
-            let newIndex = currentCardIndex + direction;
-            if (newIndex >= flashcards.length) {
-                newIndex = 0; 
-            } else if (newIndex < 0) {
-                newIndex = flashcards.length - 1; 
-            }
-            
-            currentCardIndex = newIndex;
-            renderCurrentCard();
-        }
-
-        /** Switches the view back to the input mode and resets state. */
-        window.resetApp = function() {
-            D.inputSection.classList.remove('hidden');
-            D.flashcardSection.classList.add('hidden');
-            D.sourceTextarea.value = "";
-            flashcards = [];
-            currentCardIndex = 0;
-            isDefinitionVisible = true; 
-            toggleDefinition(); // Ensure it hides the definition and sets the button text
-            D.suggestionArea.classList.add('hidden');
-            D.sourceDisplay.classList.add('hidden'); // Hide sources area
-            showMessage("");
-        }
+        }; // End of window.generateLLMFeature
 
     </script>
 </body>
