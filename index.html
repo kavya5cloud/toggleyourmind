@@ -467,17 +467,6 @@ window.generateFlashcards = async function() {
             }
         }
 
-        /** Displays an information or error message to the user. */
-        function showMessage(message) {
-            D.messageBox.textContent = message;
-            D.messageBox.classList.remove('text-red-600', 'text-violet-700');
-            if (message.includes("Oops!") || message.includes("error") || message.includes("failed")) {
-                 D.messageBox.classList.add('text-red-600');
-            } else {
-                 D.messageBox.classList.add('text-violet-700');
-            }
-            D.messageBox.classList.toggle('hidden', message.length === 0);
-        }
 
         /** Generic function for fetching data with exponential backoff and retry. */
         async function fetchWithRetry(url, payload) {
