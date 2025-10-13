@@ -468,35 +468,7 @@ window.generateFlashcards = async function() {
         }
 
 
-        /** Generic function for fetching data with exponential backoff and retry. */
-        async function fetchWithRetry(url, payload) {
-            let attempts = 0;
-            const maxAttempts = 3;
 
-            while (attempts < maxAttempts) {
-                attempts++;
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.ok) {
-                        return await response.json();
-                    }
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                } catch (error) {
-                    console.error(`Attempt ${attempts} failed:`, error);
-                    if (attempts < maxAttempts) {
-                        const delay = Math.pow(2, attempts) * 1000;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    } else {
-                        return null; 
-                    }
-                }
-            }
-        }
         
         /** Generates flashcards from user input using the Gemini API (Feature 1). */
         window.generateFlashcards = async function() {
