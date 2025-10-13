@@ -243,12 +243,116 @@
     </div>
 
     <script type="module">
+        
         // --- API Constants ---
         const apiKey = "AIzaSyCBjZTBo2A0rB8r3O3tp4JB2QY25RthU8U"; 
         const TEXT_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=" + apiKey;
         // TTS API URL for audio generation
         const TTS_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=" + apiKey;
 
+/** Displays an information or error message to the user. */
+function showMessage(message) {
+    // This utility controls the message box visibility and styling
+    const D = { messageBox: document.getElementById('messageBox') };
+
+    D.messageBox.textContent = message;
+    D.messageBox.classList.remove('text-red-600', 'text-violet-700');
+    if (message.includes("Oops!") || message.includes("error") || message.includes("failed") || message.includes("rejected")) {
+         D.messageBox.classList.add('text-red-600');
+    } else {
+         D.messageBox.classList.add('text-violet-700');
+    }
+    D.messageBox.classList.toggle('hidden', message.length === 0);
+}
+
+
+// --- Generic Fetch with Retry (Crucial for robust API calls) ---
+
+/** Generic function for fetching data with exponential backoff and retry. */
+async function fetchWithRetry(url, payload) {
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+        attempts++;
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                return await response.json();
+            }
+            // Throw a specific error that includes the status for logging
+            throw new Error(`HTTP error! status: ${response.status}`);
+        } catch (error) {
+            // Log the attempt failure
+            console.error(`Attempt ${attempts} failed:`, error);
+            if (attempts < maxAttempts) {
+                const delay = Math.pow(2, attempts) * 1000;
+                // Wait before retrying (1s, 2s, 4s delay)
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                // Return null if all attempts fail
+                return null; 
+            }
+        }
+    }
+}
+
+
+// --- Updated Flashcard Generation Logic ---
+
+/** Generates flashcards from user input using the Gemini API (Feature 1). */
+window.generateFlashcards = async function() {
+    // State and DOM references should be defined outside this function for a real app.
+    // Assuming D and other constants (TEXT_API_URL, flashcardSystemPrompt, etc.) are available.
+    showMessage(""); 
+    
+    // ... setup and input validation omitted for brevity ...
+    // const userQuery = D.sourceTextarea.value.trim();
+    // if (!userQuery) { showMessage(...); return; }
+    
+    // setLoading(true, "Extracting fun facts...");
+
+    const payload = {
+        // contents and other config...
+    };
+
+    // Use the robust retry function
+    let responseData = await fetchWithRetry(TEXT_API_URL, payload);
+
+    // setLoading(false);
+
+    if (!responseData) {
+        // Show this if all 3 retries failed (likely a network or setup issue)
+        showMessage("Oops! Card generation failed after 3 retries. Check the console for HTTP 400 errors.");
+        return;
+    }
+
+    // NEW: Check for a top-level API error object (common with HTTP 400)
+    if (responseData.error) {
+        console.error("Gemini API Error Response:", responseData.error);
+        showMessage(`Oops! API rejected the request: ${responseData.error.message || 'Unknown reason'}. Try clearing your input and submitting a more detailed prompt.`);
+        return;
+    }
+
+    try {
+        // ... rest of the successful response parsing ...
+        
+        // Example parsing logic:
+        // const jsonText = responseData.candidates[0].content.parts[0].text;
+        // const generatedCards = JSON.parse(jsonText);
+        
+        // ... update UI with flashcards ...
+
+    } catch (e) {
+        console.error("Error parsing AI response:", e);
+        showMessage("Error processing AI response. Check the console for parsing details.");
+    }
+}
 
         // --- State ---
         let flashcards = [];
