@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Flashcard Quizzer - Lilac & Pink Focus</title>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Custom Font: DM Mono (cute code) and Inter (clean, readable body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- FONT LINK UPDATED to Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Vibrant Sticker Book Theme - Lilac and Pink */
+        body {
+            /* FONT CHANGED to Inter (Clean Sans-Serif) */
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8f0ff; /* Very light lilac/off-white background */
+            color: #6b46c1; /* Deep Violet Text */
+        }
+        
+        /* Monospace for STRUCTURE/HEADINGS/LABELS - The cute code font */
+        h1, h2, .card-term p, .p-4 .text-xs {
+            font-family: 'DM Mono', monospace; 
+            font-weight: 700;
+            letter-spacing: 0.08em; 
+        }
+
+        /* Ensure main text areas use the clean font */
+        #card-term, #card-definition, textarea {
+             /* FONT CHANGED to Inter */
+             font-family: 'Inter', sans-serif;
+             font-weight: 600; /* Use a medium-bold weight for better flashcard readability */
+        }
+        
+        /* Main container styling */
+        .fun-container {
+            border-radius: 1.5rem; /* Super rounded corners */
+            background: linear-gradient(145deg, #ffffff, #fdfcff);
+            box-shadow: 0 10px 30px -5px rgba(107, 70, 193, 0.3); /* Violet shadow */
+            transition: transform 0.3s ease;
+        }
+
+        /* Card and Input Styling */
+        .card-term, textarea {
+            border: 2px solid #d6bcfa; /* Light Lilac border */
+            border-radius: 1rem;
+        }
+
+        /* Button Styling - Bubbly and interactive */
+        .fun-button {
+            border-radius: 9999px; /* Pill shape */
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease-in-out;
+            border: 3px solid #6b46c1; /* Violet border */
+            box-shadow: 4px 4px 0px #6b46c1; /* Offset box shadow */
+        }
+        /* Primary Button: Pink (Used for Reveal) */
+        .fun-button.primary {
+            background-color: #f6a8c0; /* Medium Pink */
+            color: #6b46c1;
+        }
+        .fun-button.primary:hover {
+            transform: translateY(-2px) translateX(-2px);
+            box-shadow: 6px 6px 0px #6b46c1;
+        }
+        .fun-button.primary:active {
+            transform: translateY(2px) translateX(2px);
+            box-shadow: 1px 1px 0px #6b46c1;
+        }
+
+        /* Secondary Button: Lilac (Used for Navigation and AI Features) */
+        .fun-button.secondary {
+            background-color: #d6bcfa; /* Medium Lilac */
+            color: #6b46c1;
+            box-shadow: 4px 4px 0px #9f7aea; /* Darker Lilac shadow */
+            border-color: #9f7aea;
+        }
+        .fun-button.secondary:hover {
+            transform: translateY(-2px) translateX(-2px);
+            box-shadow: 6px 6px 0px #9f7aea;
+        }
+        .fun-button.secondary:active {
+            transform: translateY(2px) translateX(2px);
+            box-shadow: 1px 1px 0px #9f7aea;
+        }
+        
+        /* Definition Reveal Animation */
+        .reveal-content {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease-in-out, opacity 0.5s ease;
+        }
+        .reveal-content.is-visible {
+            max-height: 500px; 
+            opacity: 1;
+            padding-top: 1.5rem;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 6px solid #e2e8f0; 
+            border-top: 6px solid #f6a8c0; /* Pink accent */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+    <div id="app" class="max-w-3xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <!-- Title changed to MIND FORGE, color changed to dark indigo/violet -->
+            <h1 class="text-6xl text-indigo-700 mb-2 tracking-wide">
+                🧠 TOGGLE YOUR MIND 🧠 
+            </h1>
+            <!-- Subtitle changed to ADAPTIVE STUDY TOOLKIT. -->
+            <p class="text-violet-500 text-lg font-medium">ADAPTIVE STUDY TOOLKIT.</p>
+        </header>
+
+        <!-- 1. Input Section -->
+        <div id="input-section" class="bg-white fun-container p-6 sm:p-8">
+            <!-- Header now in DM Mono -->
+            <h2 class="text-2xl text-violet-700 mb-4">1. DROP YOUR NOTES HERE!</h2>
+            
+            <textarea id="sourceText" class="w-full p-4 resize-none text-gray-700 focus:ring-pink-400 focus:border-pink-400" rows="10" placeholder="Paste a block of text, a list of facts, or a topic you need to learn."></textarea>
+            
+            <div class="mt-6 flex justify-center">
+                <button id="generateButton" onclick="generateFlashcards()" class="fun-button primary py-3 px-8 text-lg flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    MAKE FLASHCARDS!
+                </button>
+            </div>
+            
+            <div id="messageBox" class="mt-4 text-center font-medium text-lg hidden"></div>
+        </div>
+
+        <!-- 2. Flashcard/Quiz Section (Hidden by default) -->
+        <div id="flashcard-section" class="hidden mt-10">
+            <!-- Header now in DM Mono -->
+            <h2 class="text-2xl text-violet-700 mb-6 text-center">2. TIME TO REVIEW 🚀</h2>
+
+            <!-- Card Display Area (The Card Itself) -->
+            <div id="flashcard-display" class="fun-container bg-white p-6 sm:p-8">
+                
+                <!-- Concept label now in DM Mono -->
+                <div class="card-term p-4 bg-purple-50">
+                    <p class="text-xs font-semibold uppercase text-purple-400 mb-2">Concept</p>
+                    <span id="card-term" class="text-3xl font-extrabold text-violet-700 block"></span>
+                </div>
+                
+                <!-- Definition Container (The Reveal Element) -->
+                <div id="card-definition-container" class="reveal-content">
+                    <div class="p-4 border-t border-purple-200">
+                         <!-- Answer label now in DM Mono -->
+                        <p class="text-xs font-semibold uppercase text-pink-500 mb-2">Answer</p>
+                        <span id="card-definition" class="text-xl text-gray-700 block"></span>
+                    </div>
+                </div>
+                
+            </div>
+
+            <!-- Card Controls -->
+            <div class="flex flex-col items-center mt-6">
+                <p id="card-count" class="text-sm font-medium text-purple-400 mb-4"></p>
+
+                <!-- Reveal/Navigation Buttons -->
+                <div class="flex space-x-4 mb-6">
+                    <button onclick="changeCard(-1)" class="fun-button secondary p-3 w-14 h-14">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <button id="toggleButton" onclick="toggleDefinition()" class="fun-button primary py-3 px-8 text-xl">
+                        <svg class="w-6 h-6 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        REVEAL ANSWER
+                    </button>
+                    <button onclick="changeCard(1)" class="fun-button secondary p-3 w-14 h-14">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+                
+                <!-- LLM Feature Buttons (Simplify, Mnemonic, QUIZ, DEEP DIVE, TTS, and NEW: Real-World Example) -->
+                <div class="flex justify-center space-x-3 flex-wrap">
+                    <button id="explainButton" onclick="generateLLMFeature('explain')" class="fun-button secondary py-2 px-4 text-sm mb-2">
+                        🦄 Simplify (Explain Simply)
+                    </button>
+                    <button id="mnemonicButton" onclick="generateLLMFeature('mnemonic')" class="fun-button secondary py-2 px-4 text-sm mb-2">
+                        🌟 Memory Trick (Mnemonic)
+                    </button>
+                    <!-- LLM Feature: Quiz Question Generator -->
+                    <button id="quizButton" onclick="generateLLMFeature('quiz')" class="fun-button secondary py-2 px-4 text-sm mb-2">
+                        ❓ Quiz Me! (Active Recall)
+                    </button>
+                    <!-- LLM Feature: Deep Dive Context -->
+                    <button id="contextButton" onclick="generateLLMFeature('context')" class="fun-button secondary py-2 px-4 text-sm mb-2">
+                        🎓 Deep Dive (Get Context)
+                    </button>
+                    <!-- NEW LLM Feature: Real-World Example with Grounding -->
+                    <button id="realWorldButton" onclick="generateLLMFeature('real_world')" class="fun-button secondary py-2 px-4 text-sm mb-2">
+                        🌐 Real-World Example (Search)
+                    </button>
+                    <!-- LLM Feature: Text-to-Speech -->
+                    <button id="speakButton" onclick="speakCurrentCard()" class="fun-button secondary py-2 px-4 text-sm mb-2">
+                        🗣️ Speak Card (TTS)
+                    </button>
+                </div>
+            </div>
+
+            <!-- LLM Suggestion Area -->
+            <div id="llm-suggestion-area" class="mt-8 p-6 fun-container bg-white border-l-4 border-pink-400 hidden">
+                <h3 id="suggestion-title" class="text-xl font-semibold text-violet-700 mb-3"></h3>
+                <p id="suggestion-content" class="text-base text-gray-700"></p>
+                <!-- NEW: Source display area for grounded responses -->
+                <div id="source-display" class="mt-4 pt-4 border-t border-purple-200 hidden">
+                    <p class="text-xs font-semibold uppercase text-purple-400 mb-2">Sources Used</p>
+                    <ul id="source-list" class="text-sm space-y-1"></ul>
+                </div>
+            </div>
+            
+            <!-- Back to Input Button -->
+            <div class="mt-8 text-center">
+                <button onclick="resetApp()" class="text-purple-400 hover:text-purple-600 font-medium py-2 px-4 text-sm">
+                    &larr; Start New Session
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div class="flex flex-col items-center bg-white p-10 rounded-xl shadow-2xl fun-container">
+                <div class="spinner mb-4"></div>
+                <p class="text-lg font-semibold text-pink-500" id="loading-text">Generating flashcards...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- API Constants ---
+        const apiKey = "AIzaSyCBjZTBo2A0rB8r3O3tp4JB2QY25RthU8U"; 
+        const TEXT_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=" + apiKey;
+        // TTS API URL for audio generation
+        const TTS_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=" + apiKey;
+
+
+        // --- State ---
+        let flashcards = [];
+        let currentCardIndex = 0;
+        let isDefinitionVisible = false;
+
+        // --- DOM Elements ---
+        const D = {
+            sourceTextarea: document.getElementById('sourceText'),
+            generateButton: document.getElementById('generateButton'),
+            messageBox: document.getElementById('messageBox'),
+            inputSection: document.getElementById('input-section'),
+            flashcardSection: document.getElementById('flashcard-section'),
+            loadingIndicator: document.getElementById('loading-indicator'),
+            loadingText: document.getElementById('loading-text'),
+            cardTerm: document.getElementById('card-term'),
+            cardDefinition: document.getElementById('card-definition'),
+            cardDefinitionContainer: document.getElementById('card-definition-container'),
+            cardCount: document.getElementById('card-count'),
+            suggestionArea: document.getElementById('llm-suggestion-area'),
+            suggestionTitle: document.getElementById('suggestion-title'),
+            suggestionContent: document.getElementById('suggestion-content'),
+            toggleButton: document.getElementById('toggleButton'),
+            speakButton: document.getElementById('speakButton'),
+            // NEW: Source elements for grounded responses
+            sourceDisplay: document.getElementById('source-display'),
+            sourceList: document.getElementById('source-list'),
+        };
+        
+        // --- Gemini API Schema & Prompt ---
+        // 1. System prompt for initial card generation (Structured JSON output)
+        const flashcardSystemPrompt = "You are an expert educational assistant specializing in generating concise study materials. Analyze the user's provided text/topic. Create a list of 5 to 10 key concepts and their definitions as flashcards. Respond only with a JSON array that strictly follows the provided schema. Do not include any introductory text, markdown formatting outside the JSON, or conversational responses.";
+        
+        const flashcardSchema = {
+            type: "ARRAY",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    "term": { "type": "STRING", "description": "The key concept, word, or name." },
+                    "definition": { "type": "STRING", "description": "A clear, concise explanation or definition of the term. Use bold formatting for keywords." }
+                },
+                required: ["term", "definition"],
+                additionalProperties: false
+            }
+        };
+        
+        // --- Audio Utility Functions for PCM to WAV Conversion ---
+
+        /** Converts a base64 string to an ArrayBuffer. */
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        /** Converts signed 16-bit PCM audio data to a WAV Blob for playback. */
+        function pcmToWav(pcm16, sampleRate) {
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+            const blockAlign = numChannels * (bitsPerSample / 8);
+
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+
+            // RIFF chunk
+            view.setUint32(0, 0x52494646, false); // 'RIFF'
+            view.setUint32(4, 36 + pcm16.length * 2, true); // File length
+            view.setUint32(8, 0x57415645, false); // 'WAVE'
+            
+            // FMT sub-chunk
+            view.setUint32(12, 0x666d7420, false); // 'fmt '
+            view.setUint32(16, 16, true); // Sub-chunk length
+            view.setUint16(20, 1, true); // Audio format (1 for PCM)
+            view.setUint16(22, numChannels, true); // Channels
+            view.setUint32(24, sampleRate, true); // Sample rate
+            view.setUint32(28, byteRate, true); // Byte rate
+            view.setUint16(32, blockAlign, true); // Block align
+            view.setUint16(34, bitsPerSample, true); // Bits per sample
+            
+            // Data sub-chunk
+            view.setUint32(36, 0x64617461, false); // 'data'
+            view.setUint32(40, pcm16.length * 2, true); // Data length
+
+            // Write PCM data
+            let offset = 44;
+            for (let i = 0; i < pcm16.length; i++, offset += 2) {
+                view.setInt16(offset, pcm16[i], true); // Write signed 16-bit, little-endian
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+
+        // --- Core App Functions ---
+
+        /** Sets the loading state and disables/enables buttons. */
+        function setLoading(isLoading, message = "") {
+            const buttons = Array.from(document.querySelectorAll('.fun-button'));
+            
+            if (isLoading) {
+                D.loadingText.textContent = message;
+                D.loadingIndicator.classList.remove('hidden');
+                buttons.forEach(btn => btn && (btn.disabled = true));
+            } else {
+                D.loadingIndicator.classList.add('hidden');
+                buttons.forEach(btn => btn && (btn.disabled = false));
+            }
+        }
+
+        /** Displays an information or error message to the user. */
+        function showMessage(message) {
+            D.messageBox.textContent = message;
+            D.messageBox.classList.remove('text-red-600', 'text-violet-700');
+            if (message.includes("Oops!") || message.includes("error") || message.includes("failed")) {
+                 D.messageBox.classList.add('text-red-600');
+            } else {
+                 D.messageBox.classList.add('text-violet-700');
+            }
+            D.messageBox.classList.toggle('hidden', message.length === 0);
+        }
+
+        /** Generic function for fetching data with exponential backoff and retry. */
+        async function fetchWithRetry(url, payload) {
+            let attempts = 0;
+            const maxAttempts = 3;
+
+            while (attempts < maxAttempts) {
+                attempts++;
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                } catch (error) {
+                    console.error(`Attempt ${attempts} failed:`, error);
+                    if (attempts < maxAttempts) {
+                        const delay = Math.pow(2, attempts) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        return null; 
+                    }
+                }
+            }
+        }
+        
+        /** Generates flashcards from user input using the Gemini API (Feature 1). */
+        window.generateFlashcards = async function() {
+            showMessage(""); 
+            D.suggestionArea.classList.add('hidden');
+            D.sourceDisplay.classList.add('hidden'); // Hide sources on new generation
+            const userQuery = D.sourceTextarea.value.trim();
+
+            if (!userQuery) {
+                showMessage("Please enter some text or a topic to generate cards.");
+                return;
+            }
+
+            setLoading(true, "Extracting fun facts...");
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: flashcardSystemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: flashcardSchema
+                }
+            };
+
+            let responseData = await fetchWithRetry(TEXT_API_URL, payload);
+
+            setLoading(false);
+
+            if (!responseData) {
+                showMessage("Oops! Card generation failed. Try simplifying your input.");
+                return;
+            }
+
+            try {
+                const jsonText = responseData.candidates[0].content.parts[0].text;
+                const generatedCards = JSON.parse(jsonText);
+
+                if (Array.isArray(generatedCards) && generatedCards.length > 0) {
+                    flashcards = generatedCards.filter(card => card.term && card.definition);
+                    currentCardIndex = 0;
+                    if (flashcards.length > 0) {
+                        D.inputSection.classList.add('hidden');
+                        D.flashcardSection.classList.remove('hidden');
+                        renderCurrentCard();
+                    } else {
+                         showMessage("The AI couldn't extract key concepts. Try clearer notes.");
+                    }
+                } else {
+                    showMessage("The AI didn't return valid flashcards.");
+                }
+            } catch (e) {
+                console.error("Error parsing AI response:", e);
+                showMessage("Error processing AI response. Check the console for parsing details.");
+            }
+        }
+
+        /** Generates and displays a simple explanation, mnemonic, quiz question, or context (Features 2-5, 7). */
+        window.generateLLMFeature = async function(featureType) {
+            if (flashcards.length === 0) return;
+            const card = flashcards[currentCardIndex];
+            
+            let prompt, title, loadingMessage, useGrounding = false;
+            // System instruction for the helper features
+            const helperSystemPrompt = "You are an expert educational assistant. Respond concisely and clearly, formatting the text appropriately for an online study tool. Provide a clear, short paragraph answer.";
+
+
+            // Hide previous suggestions and sources
+            D.suggestionArea.classList.add('hidden');
+            D.sourceDisplay.classList.add('hidden'); 
+
+
+            if (featureType === 'explain') {
+                // Feature 2: Simplification
+                prompt = `Explain the following concept simply and cheerfully, using playful language and bright analogies for a 5th-grade student: Term: ${card.term}. Definition: ${card.definition}`;
+                title = "🦄 Simplified Explanation";
+                loadingMessage = "Simplifying with happy analogies...";
+            } else if (featureType === 'mnemonic') {
+                // Feature 3: Mnemonic/Memory trick
+                prompt = `Generate a short, creative, and memorable mnemonic device or fun, pink-themed visual trick for the following concept: Term: ${card.term}. Definition: ${card.definition}`;
+                title = "🌟 Memory Trick";
+                loadingMessage = "Whipping up a sweet memory aid...";
+            } else if (featureType === 'quiz') {
+                // Feature 4: Quiz Question Generator
+                prompt = `Based on this term and definition, generate a single short-answer quiz question to test the user's active recall. Follow the question immediately with a newline and the answer in the format: "Answer: [The Answer]". Term: ${card.term}. Definition: ${card.definition}`;
+                title = "❓ Quiz Time!";
+                loadingMessage = "Generating a fun quiz question...";
+            } else if (featureType === 'context') { 
+                // Feature 5: Deep Dive Context
+                prompt = `Provide a comprehensive, authoritative, and detailed explanation for the following term and definition, suitable for university-level background reading. Focus on the history, significance, and practical examples of the concept. Term: ${card.term}. Definition: ${card.definition}`;
+                title = "🎓 Deep Dive Context";
+                loadingMessage = "Fetching deep-dive educational context...";
+            } else if (featureType === 'real_world') { // <-- NEW FEATURE (7)
+                // Feature 7: Real-World Example with Search Grounding
+                prompt = `Find and describe a very recent, real-world example or application for the following concept. Summarize the finding in one short paragraph: Term: ${card.term}. Definition: ${card.definition}`;
+                title = "🌐 Real-World Example";
+                loadingMessage = "Searching the web for an up-to-date example...";
+                useGrounding = true; // Enable grounding
+            } 
+            else {
+                return;
+            }
+
+            setLoading(true, loadingMessage);
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: helperSystemPrompt }] }
+            };
+            
+            // Add tools for grounding if requested
+            if (useGrounding) {
+                payload.tools = [{ "google_search": {} }];
+            }
+
+
+            const responseData = await fetchWithRetry(TEXT_API_URL, payload);
+            setLoading(false);
+
+            if (!responseData || !responseData.candidates?.[0]?.content?.parts?.[0]?.text) {
+                D.suggestionTitle.textContent = "Oopsie!";
+                D.suggestionContent.textContent = "Could not generate assistance. Let's try again.";
+                D.suggestionArea.classList.remove('hidden');
+                return;
+            }
+
+            const candidate = responseData.candidates[0];
+            const text = candidate.content.parts[0].text;
+            
+            D.suggestionTitle.textContent = title;
+            // Replace newlines with <br> for HTML rendering
+            D.suggestionContent.innerHTML = text.replace(/\n/g, '<br>');
+
+            // --- Handle Grounding Sources (for real_world feature) ---
+            D.sourceList.innerHTML = ''; // Clear previous sources
+            let hasSources = false;
+
+            if (useGrounding) {
+                const groundingMetadata = candidate.groundingMetadata;
+                if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                    const sources = groundingMetadata.groundingAttributions
+                        .map(attribution => ({
+                            uri: attribution.web?.uri,
+                            title: attribution.web?.title,
+                        }))
+                        .filter(source => source.uri && source.title);
+
+                    if (sources.length > 0) {
+                        sources.forEach(source => {
+                            const listItem = document.createElement('li');
+                            // Use a target="_blank" for safe external links
+                            listItem.innerHTML = `<a href="${source.uri}" target="_blank" class="text-purple-600 hover:text-pink-500 underline transition duration-150">${source.title}</a>`;
+                            D.sourceList.appendChild(listItem);
+                        });
+                        hasSources = true;
+                    }
+                }
+            }
+            
+            // Show or hide the source display area
+            D.sourceDisplay.classList.toggle('hidden', !hasSources);
+
+            D.suggestionArea.classList.remove('hidden');
+        }
+        
+        /** Generates and plays audio for the current card's term and definition (Feature 6). */
+        window.speakCurrentCard = async function() {
+            if (flashcards.length === 0) return;
+            const card = flashcards[currentCardIndex];
+
+            // Prepare the text for clear reading. Remove HTML bold tags.
+            const cleanDefinition = card.definition.replace(/<\/?b>/g, '');
+            const speechText = `The term is: ${card.term}. The definition is: ${cleanDefinition}`;
+
+            D.suggestionArea.classList.add('hidden');
+            D.sourceDisplay.classList.add('hidden'); // Hide sources
+            setLoading(true, "Generating speech...");
+
+            // Payload for the TTS API call
+            const payload = {
+                contents: [{ parts: [{ text: speechText }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        // Using the 'Kore' voice for a firm, clear delivery
+                        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            const responseData = await fetchWithRetry(TTS_API_URL, payload);
+            setLoading(false);
+            
+            if (!responseData) {
+                 showMessage("Oops! Failed to generate audio.");
+                 return;
+            }
+
+            try {
+                const part = responseData?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/L16")) {
+                    const rateMatch = mimeType.match(/rate=(\d+)/);
+                    if (!rateMatch) throw new Error("Could not find sample rate in mimeType.");
+                    const sampleRate = parseInt(rateMatch[1], 10);
+                    
+                    // 1. Decode base64 to raw PCM buffer
+                    const pcmBuffer = base64ToArrayBuffer(audioData);
+                    
+                    // 2. Convert raw PCM buffer (Int8Array) to Int16Array
+                    const pcm16 = new Int16Array(pcmBuffer.byteLength / 2);
+                    const view = new DataView(pcmBuffer);
+
+                    for (let i = 0; i < pcm16.length; i++) {
+                        // Read signed 16-bit little-endian
+                        pcm16[i] = view.getInt16(i * 2, true); 
+                    }
+
+                    // 3. Convert PCM16 data to WAV Blob
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    
+                    // 4. Play the audio
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    const audio = new Audio(audioUrl);
+                    D.speakButton.disabled = true; // Disable button while audio plays
+                    audio.onended = () => {
+                        URL.revokeObjectURL(audioUrl); // Clean up
+                        D.speakButton.disabled = false;
+                    }
+                    audio.play().catch(e => {
+                        console.error("Audio playback failed:", e);
+                        showMessage("Audio playback blocked by browser (check permissions).");
+                        D.speakButton.disabled = false;
+                    });
+                } else {
+                    throw new Error("Invalid or missing audio data in API response.");
+                }
+            } catch (e) {
+                console.error("Audio processing error:", e);
+                showMessage("Oops! Audio failed: " + e.message);
+            }
+        }
+
+
+        // --- UI Navigation and State ---
+
+        /** Toggles the visibility of the definition container. */
+        window.toggleDefinition = function() {
+            isDefinitionVisible = !isDefinitionVisible;
+            if (isDefinitionVisible) {
+                D.cardDefinitionContainer.classList.add('is-visible');
+                D.toggleButton.textContent = "HIDE ANSWER";
+                D.toggleButton.classList.remove('primary');
+                D.toggleButton.classList.add('secondary');
+            } else {
+                D.cardDefinitionContainer.classList.remove('is-visible');
+                D.toggleButton.textContent = "REVEAL ANSWER";
+                D.toggleButton.classList.remove('secondary');
+                D.toggleButton.classList.add('primary');
+            }
+        }
+        
+        /** Renders the term and definition for the current flashcard. */
+        function renderCurrentCard() {
+            if (flashcards.length === 0) return;
+
+            const card = flashcards[currentCardIndex];
+            D.cardTerm.textContent = card.term;
+            D.cardDefinition.innerHTML = card.definition;
+            
+            D.cardCount.textContent = `Card ${currentCardIndex + 1} of ${flashcards.length}`;
+            
+            // Hide definition for the new card
+            isDefinitionVisible = true; 
+            toggleDefinition(); // Flips it back to the hidden state
+            
+            D.suggestionArea.classList.add('hidden'); 
+            D.sourceDisplay.classList.add('hidden'); // Hide sources area
+        }
+
+        /** Changes the current card index and renders the new card. */
+        window.changeCard = function(direction) {
+            if (flashcards.length === 0) return;
+
+            let newIndex = currentCardIndex + direction;
+            if (newIndex >= flashcards.length) {
+                newIndex = 0; 
+            } else if (newIndex < 0) {
+                newIndex = flashcards.length - 1; 
+            }
+            
+            currentCardIndex = newIndex;
+            renderCurrentCard();
+        }
+
+        /** Switches the view back to the input mode and resets state. */
+        window.resetApp = function() {
+            D.inputSection.classList.remove('hidden');
+            D.flashcardSection.classList.add('hidden');
+            D.sourceTextarea.value = "";
+            flashcards = [];
+            currentCardIndex = 0;
+            isDefinitionVisible = true; 
+            toggleDefinition(); // Ensure it hides the definition and sets the button text
+            D.suggestionArea.classList.add('hidden');
+            D.sourceDisplay.classList.add('hidden'); // Hide sources area
+            showMessage("");
+        }
+
+    </script>
+</body>
+</html>
